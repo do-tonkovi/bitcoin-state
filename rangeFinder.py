@@ -316,63 +316,36 @@ def detect_ranges(df: pd.DataFrame) -> list[RangeSeg]:
         up_break = close_i > (range_high + BREAK_ATR_MULT * atr_i)
         down_break = close_i < (range_low - BREAK_ATR_MULT * atr_i)
 
-        if not (up_break or down_break):
-            # outside tolerance but not an impulse: let regime check decide later
+        # If we get a candle that closes outside the impulse threshold, end the range immediately at the previous candle
+        if up_break or down_break:
+            dirn = "up_break" if up_break else "down_break"
+            end_i = i - 1
+            if end_i >= range_start_i:
+                days = end_i - range_start_i + 1
+                if days >= RANGE_MIN_DAYS:
+                    ranges.append(RangeSeg(
+                        start_ts=df["ts"].iloc[range_start_i],
+                        end_ts=df["ts"].iloc[end_i],
+                        days=int(days),
+                        end_reason=dirn,
+                        range_low=float(range_low),
+                        range_high=float(range_high),
+                        atr_ref=segment_atr_ref(df, range_start_i, end_i),
+                    ))
+
+            # reset
+            state = "SEARCH"
+            cooldown = POST_EXIT_COOLDOWN
+            range_start_i = None
+            range_high = None
+            range_low = None
+            bad_consol_streak = 0
+
             i += 1
             continue
 
-        dirn = "up_break" if up_break else "down_break"
-
-        # Confirm follow-through
-        confirmed = True
-        for k in range(1, BREAK_CONFIRM_DAYS):
-            if i + k >= n:
-                confirmed = False
-                break
-            atr_k = df["atr"].iloc[i + k]
-            if pd.isna(atr_k) or atr_k <= 0:
-                confirmed = False
-                break
-            atr_k = float(atr_k)
-            close_k = float(df["close"].iloc[i + k])
-
-            if dirn == "up_break":
-                if not (close_k > (range_high + BREAK_ATR_MULT * atr_k)):
-                    confirmed = False
-                    break
-            else:
-                if not (close_k < (range_low - BREAK_ATR_MULT * atr_k)):
-                    confirmed = False
-                    break
-
-        if not confirmed:
-            i += 1
-            continue
-
-        # End range at day BEFORE breakout begins
-        end_i = i - 1
-        if end_i >= range_start_i:
-            days = end_i - range_start_i + 1
-            if days >= RANGE_MIN_DAYS:
-                ranges.append(RangeSeg(
-                    start_ts=df["ts"].iloc[range_start_i],
-                    end_ts=df["ts"].iloc[end_i],
-                    days=int(days),
-                    end_reason=dirn,
-                    range_low=float(range_low),
-                    range_high=float(range_high),
-                    atr_ref=segment_atr_ref(df, range_start_i, end_i),
-                ))
-
-        # reset
-        state = "SEARCH"
-        cooldown = POST_EXIT_COOLDOWN
-        range_start_i = None
-        range_high = None
-        range_low = None
-        bad_consol_streak = 0
-
-        i = i + BREAK_CONFIRM_DAYS
+        # outside tolerance but not an impulse: let regime check decide later
+        i += 1
         continue
 
     # Close an open range at end-of-data
