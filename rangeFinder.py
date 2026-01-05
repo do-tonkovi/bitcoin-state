@@ -61,14 +61,14 @@ BASE_TIMEFRAME = "1m"
 # ---------------------------
 # Detection parameters (tune)
 # ---------------------------
-ATR_LEN = 14
+ATR_LEN = 20
 
-RANGE_WINDOW = 14
-RANGE_MIN_DAYS = 10
+RANGE_WINDOW = 20
+RANGE_MIN_DAYS = 15
 
 # Consolidation criteria
-RANGE_EFF_MAX = 0.22
-RANGE_WIDTH_ATR_MAX = 9.0
+RANGE_EFF_MAX = 0.28
+RANGE_WIDTH_ATR_MAX = 12.0
 
 # Bound tolerance (small pokes don't end range)
 BOUND_TOL_ATR_MULT = 0.25
