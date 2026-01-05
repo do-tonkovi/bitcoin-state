@@ -65,12 +65,12 @@ ATR_LEN = 20
 
 # Focus on capturing the large range from 8.5 to 8.7 by making the window and min days larger,
 # and relaxing the consolidation criteria further.
-RANGE_WINDOW = 40
-RANGE_MIN_DAYS = 40
+RANGE_WINDOW = 25
+RANGE_MIN_DAYS = 20
 
 # Further loosen consolidation criteria to allow broad, oscillating ranges
-RANGE_EFF_MAX = 0.48
-RANGE_WIDTH_ATR_MAX = 22.0
+RANGE_EFF_MAX = 0.55
+RANGE_WIDTH_ATR_MAX = 28.0
 
 # Bound tolerance (small pokes don't end range)
 BOUND_TOL_ATR_MULT = 0.25
@@ -88,8 +88,8 @@ POST_EXIT_COOLDOWN = 2
 # ---------------------------
 # Merge parameters (even more aggressive to allow merging of adjacent/overlapping consolidations)
 # ---------------------------
-MAX_GAP_DAYS = 12                 # allow a much larger gap
-PRICE_OVERLAP_TOL_ATR = 3.0       # allow even more price overlap tolerance
+MAX_GAP_DAYS = 20                 # allow a very large gap for merging
+PRICE_OVERLAP_TOL_ATR = 5.0       # allow very broad price overlap for merging
 
 
 @dataclass
