@@ -206,8 +206,17 @@ def consolidation_ok(df: pd.DataFrame, i_end: int, w: int) -> bool:
     atr_mean = float(window["atr"].mean())
     width_atr = width / atr_mean if atr_mean > 0 else math.inf
 
+    # New: If the majority of candles in the window overlap in price, treat as a range
+    highs = window["high"].to_numpy(float)
+    lows = window["low"].to_numpy(float)
+    overlap_count = 0
+    for j in range(1, len(highs)):
+        # If this candle overlaps previous candle in price
+        if not (lows[j] > highs[j-1] or highs[j] < lows[j-1]):
+            overlap_count += 1
+    overlap_ratio = overlap_count / (len(highs) - 1) if len(highs) > 1 else 0
+
     # TPO/bell-shape check: only require that the price histogram is not flat and has some overlap
-    # (relaxed: allow up to 4 modes, lower peak requirement, higher skew)
     def relaxed_tpo(closes):
         if len(closes) < 8:
             return False
@@ -216,17 +225,14 @@ def consolidation_ok(df: pd.DataFrame, i_end: int, w: int) -> bool:
         total = hist.sum()
         if total == 0:
             return False
-        # At least 8% of closes in the peak bin
         if peak / total < 0.08:
             return False
-        # Allow up to 4 local maxima
         modes = 0
         for i in range(1, len(hist) - 1):
             if hist[i] > hist[i - 1] and hist[i] > hist[i + 1]:
                 modes += 1
         if modes > 4:
             return False
-        # Allow higher skew
         from scipy.stats import skew
         sk = skew(closes)
         if abs(sk) > 0.7:
@@ -235,10 +241,13 @@ def consolidation_ok(df: pd.DataFrame, i_end: int, w: int) -> bool:
 
     bell = relaxed_tpo(closes)
 
-    # Prevent strong trends from being classified as ranges
     net_change = abs(closes[-1] - closes[0])
     if atr_mean > 0 and net_change / atr_mean > 3.5:
         return False
+
+    # If price overlap is high, treat as a range even if other criteria are not perfect
+    if overlap_ratio > 0.7:
+        return True
 
     return (eff <= RANGE_EFF_MAX) and (width_atr <= RANGE_WIDTH_ATR_MAX) and bell
 
