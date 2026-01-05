@@ -63,12 +63,12 @@ BASE_TIMEFRAME = "1m"
 # ---------------------------
 ATR_LEN = 20
 
-RANGE_WINDOW = 20
-RANGE_MIN_DAYS = 15
+RANGE_WINDOW = 35
+RANGE_MIN_DAYS = 30
 
 # Consolidation criteria
-RANGE_EFF_MAX = 0.28
-RANGE_WIDTH_ATR_MAX = 12.0
+RANGE_EFF_MAX = 0.35
+RANGE_WIDTH_ATR_MAX = 16.0
 
 # Bound tolerance (small pokes don't end range)
 BOUND_TOL_ATR_MULT = 0.25
