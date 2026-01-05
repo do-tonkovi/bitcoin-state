@@ -156,6 +156,39 @@ def efficiency(closes: np.ndarray) -> float:
     return net / path if path > 0 else 0.0
 
 
+def is_bell_shaped(closes: np.ndarray, bins: int = 12, min_peak_frac: float = 0.18, max_modes: int = 1, max_skew: float = 0.35) -> bool:
+    """
+    Returns True if the closes distribution is bell-shaped (unimodal, symmetric).
+    - bins: number of histogram bins
+    - min_peak_frac: minimum fraction of points in the peak bin
+    - max_modes: maximum number of local maxima allowed
+    - max_skew: maximum allowed absolute skewness
+    """
+    if len(closes) < 8:
+        return False
+    hist, bin_edges = np.histogram(closes, bins=bins)
+    peak = hist.max()
+    peak_idx = hist.argmax()
+    total = hist.sum()
+    if total == 0:
+        return False
+    # Peak must be significant
+    if peak / total < min_peak_frac:
+        return False
+    # Count local maxima
+    modes = 0
+    for i in range(1, len(hist) - 1):
+        if hist[i] > hist[i - 1] and hist[i] > hist[i + 1]:
+            modes += 1
+    if modes > max_modes:
+        return False
+    # Check symmetry (skewness)
+    from scipy.stats import skew
+    sk = skew(closes)
+    if abs(sk) > max_skew:
+        return False
+    return True
+
 def consolidation_ok(df: pd.DataFrame, i_end: int, w: int) -> bool:
     i0 = i_end - w + 1
     if i0 < 0:
@@ -171,7 +204,9 @@ def consolidation_ok(df: pd.DataFrame, i_end: int, w: int) -> bool:
     atr_mean = float(window["atr"].mean())
     width_atr = width / atr_mean if atr_mean > 0 else math.inf
 
-    return (eff <= RANGE_EFF_MAX) and (width_atr <= RANGE_WIDTH_ATR_MAX)
+    # Add bell-shape check
+    bell = is_bell_shaped(closes)
+    return (eff <= RANGE_EFF_MAX) and (width_atr <= RANGE_WIDTH_ATR_MAX) and bell
 
 
 def segment_atr_ref(df: pd.DataFrame, start_i: int, end_i: int) -> float:
