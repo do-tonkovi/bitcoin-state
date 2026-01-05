@@ -65,12 +65,12 @@ ATR_LEN = 20
 
 # Focus on capturing the large range from 8.5 to 8.7 by making the window and min days larger,
 # and relaxing the consolidation criteria further.
-RANGE_WINDOW = 25
-RANGE_MIN_DAYS = 20
+RANGE_WINDOW = 45
+RANGE_MIN_DAYS = 45
 
 # Further loosen consolidation criteria to allow broad, oscillating ranges
-RANGE_EFF_MAX = 0.55
-RANGE_WIDTH_ATR_MAX = 28.0
+RANGE_EFF_MAX = 0.65
+RANGE_WIDTH_ATR_MAX = 35.0
 
 # Bound tolerance (small pokes don't end range)
 BOUND_TOL_ATR_MULT = 0.25
