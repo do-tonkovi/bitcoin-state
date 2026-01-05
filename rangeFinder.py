@@ -63,13 +63,14 @@ BASE_TIMEFRAME = "1m"
 # ---------------------------
 ATR_LEN = 20
 
-# Make the window and min days a bit smaller to allow earlier start, but keep large enough for broad ranges
-RANGE_WINDOW = 25
-RANGE_MIN_DAYS = 20
+# Focus on capturing the large range from 8.5 to 8.7 by making the window and min days larger,
+# and relaxing the consolidation criteria further.
+RANGE_WINDOW = 40
+RANGE_MIN_DAYS = 40
 
-# Loosen consolidation criteria to allow more overlap and less strict bell shape
-RANGE_EFF_MAX = 0.40
-RANGE_WIDTH_ATR_MAX = 18.0
+# Further loosen consolidation criteria to allow broad, oscillating ranges
+RANGE_EFF_MAX = 0.48
+RANGE_WIDTH_ATR_MAX = 22.0
 
 # Bound tolerance (small pokes don't end range)
 BOUND_TOL_ATR_MULT = 0.25
@@ -87,8 +88,8 @@ POST_EXIT_COOLDOWN = 2
 # ---------------------------
 # Merge parameters (even more aggressive to allow merging of adjacent/overlapping consolidations)
 # ---------------------------
-MAX_GAP_DAYS = 8                 # allow a larger gap
-PRICE_OVERLAP_TOL_ATR = 2.0      # allow more price overlap tolerance
+MAX_GAP_DAYS = 12                 # allow a much larger gap
+PRICE_OVERLAP_TOL_ATR = 3.0       # allow even more price overlap tolerance
 
 
 @dataclass
@@ -157,7 +158,7 @@ def efficiency(closes: np.ndarray) -> float:
     return net / path if path > 0 else 0.0
 
 
-def is_bell_shaped(closes: np.ndarray, bins: int = 10, min_peak_frac: float = 0.14, max_modes: int = 2, max_skew: float = 0.45) -> bool:
+def is_bell_shaped(closes: np.ndarray, bins: int = 8, min_peak_frac: float = 0.10, max_modes: int = 3, max_skew: float = 0.55) -> bool:
     """
     Returns True if the closes distribution is bell-shaped (unimodal, symmetric).
     - bins: number of histogram bins
