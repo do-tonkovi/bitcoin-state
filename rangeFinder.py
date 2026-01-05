@@ -199,16 +199,48 @@ def consolidation_ok(df: pd.DataFrame, i_end: int, w: int) -> bool:
     if window["atr"].isna().any():
         return False
 
-    # --- FORCE: Only allow ranges that start after 8 May 2025 and end before 8 July 2025 ---
-    window_start = window["ts"].iloc[0]
-    window_end = window["ts"].iloc[-1]
-    may8 = pd.Timestamp("2025-05-08T00:00:00Z")
-    jul8 = pd.Timestamp("2025-07-08T00:00:00Z")
-    if not (window_start >= may8 and window_end <= jul8):
+    closes = window["close"].to_numpy(float)
+    eff = efficiency(closes)
+
+    width = float(window["high"].max() - window["low"].min())
+    atr_mean = float(window["atr"].mean())
+    width_atr = width / atr_mean if atr_mean > 0 else math.inf
+
+    # TPO/bell-shape check: only require that the price histogram is not flat and has some overlap
+    # (relaxed: allow up to 4 modes, lower peak requirement, higher skew)
+    def relaxed_tpo(closes):
+        if len(closes) < 8:
+            return False
+        hist, _ = np.histogram(closes, bins=8)
+        peak = hist.max()
+        total = hist.sum()
+        if total == 0:
+            return False
+        # At least 8% of closes in the peak bin
+        if peak / total < 0.08:
+            return False
+        # Allow up to 4 local maxima
+        modes = 0
+        for i in range(1, len(hist) - 1):
+            if hist[i] > hist[i - 1] and hist[i] > hist[i + 1]:
+                modes += 1
+        if modes > 4:
+            return False
+        # Allow higher skew
+        from scipy.stats import skew
+        sk = skew(closes)
+        if abs(sk) > 0.7:
+            return False
+        return True
+
+    bell = relaxed_tpo(closes)
+
+    # Prevent strong trends from being classified as ranges
+    net_change = abs(closes[-1] - closes[0])
+    if atr_mean > 0 and net_change / atr_mean > 3.5:
         return False
 
-    # Ignore all other checks for now to force detection in this period
-    return True
+    return (eff <= RANGE_EFF_MAX) and (width_atr <= RANGE_WIDTH_ATR_MAX) and bell
 
 
 def segment_atr_ref(df: pd.DataFrame, start_i: int, end_i: int) -> float:
