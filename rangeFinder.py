@@ -84,10 +84,10 @@ POST_EXIT_COOLDOWN = 2
 
 
 # ---------------------------
-# Merge parameters (conservative; DO NOT destroy impulse-separated ranges)
+# Merge parameters (slightly more aggressive, but still do NOT destroy impulse-separated ranges)
 # ---------------------------
-MAX_GAP_DAYS = 3                 # tiny gap only
-PRICE_OVERLAP_TOL_ATR = 0.50     # mild tolerance
+MAX_GAP_DAYS = 5                 # allow a bit larger gap
+PRICE_OVERLAP_TOL_ATR = 1.0      # allow more price overlap tolerance
 
 
 @dataclass
@@ -206,6 +206,13 @@ def consolidation_ok(df: pd.DataFrame, i_end: int, w: int) -> bool:
 
     # Add bell-shape check
     bell = is_bell_shaped(closes)
+
+    # New: Prevent strong trends from being classified as ranges
+    net_change = abs(closes[-1] - closes[0])
+    # If net change is more than 2.5 ATRs, it's likely a trend, not a range
+    if atr_mean > 0 and net_change / atr_mean > 2.5:
+        return False
+
     return (eff <= RANGE_EFF_MAX) and (width_atr <= RANGE_WIDTH_ATR_MAX) and bell
 
 
