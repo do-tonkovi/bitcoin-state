@@ -316,10 +316,16 @@ def detect_ranges(df: pd.DataFrame) -> list[RangeSeg]:
         up_break = close_i > (range_high + BREAK_ATR_MULT * atr_i)
         down_break = close_i < (range_low - BREAK_ATR_MULT * atr_i)
 
-        # If we get a candle that closes outside the impulse threshold, end the range immediately at the previous candle
+        # If we get a candle that closes outside the impulse threshold, end the range immediately at the previous candle,
+        # but also allow the range to end at the exact breakout candle if the move is very large (e.g. >2.5 ATRs).
         if up_break or down_break:
             dirn = "up_break" if up_break else "down_break"
-            end_i = i - 1
+            # If the breakout candle itself is a huge move, end at this candle, else at previous
+            breakout_move = abs(close_i - (range_high if up_break else range_low))
+            if breakout_move > 2.5 * atr_i:
+                end_i = i
+            else:
+                end_i = i - 1
             if end_i >= range_start_i:
                 days = end_i - range_start_i + 1
                 if days >= RANGE_MIN_DAYS:
