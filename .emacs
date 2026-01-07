@@ -7,7 +7,7 @@
  '(custom-safe-themes
    '("2f6ca293861c427ed84c7250fb2a60bcadede1a856bf69e1d275db6eee2249f5"
      default))
- '(package-selected-packages '(company flycheck gptel lsp-ui transient)))
+ '(package-selected-packages '(company flycheck gptel lsp-mode lsp-ui transient)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -16,8 +16,9 @@
  )
 
 (load-theme 'wombat t)
-(menu-bar-mode 0)
-
+(menu-bar-mode -1)
+(tool-bar-mode -1)
+(scroll-bar-mode -1)
 (require 'recentf)
 (recentf-mode 1)
 
@@ -45,7 +46,7 @@
 (dolist (mode '(term-mode eshell-mode shell-mode vterm-mode))
   (add-hook (intern (format "%s-hook" mode))
             (lambda () (display-line-numbers-mode 0))))
-
+(require 'tramp)
 ;;;; Autocomplete framework
 (use-package company
   :hook (after-init . global-company-mode)
@@ -86,3 +87,30 @@
 
 (add-hook 'shell-mode-hook (lambda () (company-mode -1)))
 (add-hook 'eshell-mode-hook (lambda () (company-mode -1)))
+
+
+(use-package exec-path-from-shell
+  :ensure t
+  :config
+  ;; Make Emacs inherit PATH + env vars from your zsh
+  (exec-path-from-shell-initialize)
+  (exec-path-from-shell-copy-env "OPENAI_API_KEY"))
+
+(use-package aidermacs
+  :ensure t
+  :bind (("C-c a" . aidermacs-transient-menu))  ; open its main menu
+  :config
+  (setq aidermacs-aider-command "aider")        ; use the aider CLI
+  ;; Optional: set default model (inherits from your env)
+  (setq aidermacs-default-model "gpt-4.1"))
+
+(setq iso-transl-char-map nil)
+(global-set-key (kbd "M-p") #'scroll-down-command)
+(global-set-key (kbd "M-n") #'scroll-up-command)
+
+;; Save all auto-save files in ~/.emacs.d/auto-saved/
+(defconst my-auto-save-folder (expand-file-name "~/.emacs.d/auto-saved/"))
+(unless (file-exists-p my-auto-save-folder)
+  (make-directory my-auto-save-folder t))
+(setq auto-save-file-name-transforms
+      `((".*" ,(concat my-auto-save-folder "\\1") t)))

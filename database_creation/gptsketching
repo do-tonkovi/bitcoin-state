@@ -1,0 +1,10 @@
+bitcoin-state/
+├── sql/
+│   ├── 00_extensions.sql
+│   ├── 01_dimensions.sql
+│   ├── 02_raw.sql
+│   ├── 03_rollups.sql
+│   ├── 04_features.sql
+│   ├── 05_labels.sql
+│   └── 99_sandbox.sql
+└── README.md
